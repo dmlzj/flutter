@@ -75,6 +75,7 @@ class ScaleUpdateDetails {
     this.focalPoint = Offset.zero,
     Offset localFocalPoint,
     this.scale = 1.0,
+    this.delta = Offset.zero,
     this.horizontalScale = 1.0,
     this.verticalScale = 1.0,
     this.rotation = 0.0,
@@ -116,6 +117,7 @@ class ScaleUpdateDetails {
   ///  * [horizontalScale], which is the scale along the horizontal axis.
   ///  * [verticalScale], which is the scale along the vertical axis.
   final double scale;
+  final Offset delta;
 
   /// The scale implied by the average distance along the horizontal axis
   /// between the pointers in contact with the screen.
@@ -261,6 +263,7 @@ class ScaleGestureRecognizer extends OneSequenceGestureRecognizer {
   double get _horizontalScaleFactor => _initialHorizontalSpan > 0.0 ? _currentHorizontalSpan / _initialHorizontalSpan : 1.0;
 
   double get _verticalScaleFactor => _initialVerticalSpan > 0.0 ? _currentVerticalSpan / _initialVerticalSpan : 1.0;
+  Offset _getDeltaForDetails(Offset delta) => delta;
 
   double _computeRotationFactor() {
     if (_initialLine == null || _currentLine == null) {
@@ -329,7 +332,7 @@ class ScaleGestureRecognizer extends OneSequenceGestureRecognizer {
     _update();
 
     if (!didChangeConfiguration || _reconfigure(event.pointer))
-      _advanceStateMachine(shouldStartIfAccepted);
+      _advanceStateMachine(shouldStartIfAccepted, event: event);
     stopTrackingIfPointerNoLongerDown(event);
   }
 
@@ -415,7 +418,7 @@ class ScaleGestureRecognizer extends OneSequenceGestureRecognizer {
     return true;
   }
 
-  void _advanceStateMachine(bool shouldStartIfAccepted) {
+  void _advanceStateMachine(bool shouldStartIfAccepted, {PointerEvent event}) {
     if (_state == _ScaleState.ready)
       _state = _ScaleState.possible;
 
@@ -437,6 +440,7 @@ class ScaleGestureRecognizer extends OneSequenceGestureRecognizer {
       invokeCallback<void>('onUpdate', () {
         onUpdate(ScaleUpdateDetails(
           scale: _scaleFactor,
+          delta: _getDeltaForDetails(event.localDelta),
           horizontalScale: _horizontalScaleFactor,
           verticalScale: _verticalScaleFactor,
           focalPoint: _currentFocalPoint,
